@@ -116,13 +116,28 @@ export default class HoldemRound {
 
   private handleShowdown(players: HandPlayer[]): void {
     this.sortPlayersByHandValue(players);
-    const winner = players[0];
+    const playerHands = players.map(player => {
+      const playerCards = [...player.getHoleCards(), ...this.boardCards];
+      return HoldemHandDecider.getHand(playerCards);
+    });
+
+    const winners: HandPlayer[] = [players[0]];
+    let i = 1;
+    while(playerHands[i-1].compareTo(playerHands[i]) == 0) {
+      winners.push(players[i]);
+      i++;
+    }
 
     // Logging for dev work
     // TODO: remove
-    const winnerCards = [...winner.getHoleCards(), ...this.boardCards];
-    const winnerHand = HoldemHandDecider.getHand(winnerCards);
-    console.log(`Player ${winner.name} won with: ${winnerHand.cards.join(', ')}`);
+    if (winners.length == 1) {
+      console.log(`Player ${winners[0].name} won with: ${playerHands[0].cards.join(', ')}`);
+    } else {
+      console.log(`${winners.length} players tied:`);
+      winners.forEach(
+        (winner, index) => console.log(`${winner.name} with ${playerHands[index].cards.join(', ')}`)
+      );
+    }
   }
 
   private sortPlayersByHandValue(players: HandPlayer[]): void {
