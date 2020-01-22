@@ -9,7 +9,7 @@ export default class Deck {
     this.shuffleFisherYates();
   }
 
-  setInitialCards(): void {
+  private setInitialCards(): void {
     const suites = [
       Suite.CLUB,
       Suite.DIAMOND,
@@ -45,8 +45,7 @@ export default class Deck {
    * Randomly shuffle an array using Fisher-Yates algorithm
    * https://stackoverflow.com/a/2450976/1293256
    */
-  shuffleFisherYates(): void {
-
+  private shuffleFisherYates(): void {
     let currentIndex = this.cards.length;
     let temporaryValue, randomIndex;
 
@@ -61,5 +60,18 @@ export default class Deck {
       this.cards[currentIndex] = this.cards[randomIndex];
       this.cards[randomIndex] = temporaryValue;
     }
+  }
+
+  drawCards(count: number): Card[] {
+    const cards: Card[] = [];
+    for (let i=0; i<count; i++) {
+      cards.push(this.drawCard());
+    }
+
+    return cards;
+  }
+
+  drawCard(): Card {
+    return this.cards.pop();
   }
 }
