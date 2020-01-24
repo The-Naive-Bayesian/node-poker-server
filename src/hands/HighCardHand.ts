@@ -1,16 +1,24 @@
-import Card from "./Card";
+import Card from "../Card";
+import Hand from "./Hand";
 import {Type} from "./HandEnums";
 
-export default class Hand {
+export default class HighCardHand implements Hand {
   public readonly size;
-  constructor(public readonly cards: Card[], public readonly type: Type) {
+  public readonly type: Type;
+
+  constructor(public readonly cards: Card[]) {
     this.size = this.cards.length;
+    this.type = Type.HIGH_CARD;
   }
 
-  /**
-   * Currently assumes both hands are type HIGH_CARD
-   */
   compareTo(other: Hand): number {
+    const typeCompareResult = this.type - other.type;
+    if (typeCompareResult != 0) return typeCompareResult;
+
+    return this.compareHighCardHands(other as HighCardHand);
+  }
+
+  private compareHighCardHands(other: HighCardHand): number {
     if (this.size !== other.size) {
       throw Error(`hand size mismatch: hand 1 had ${this.size} cards while hand 2 had ${other.size}`);
     }

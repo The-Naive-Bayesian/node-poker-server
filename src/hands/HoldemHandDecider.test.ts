@@ -1,5 +1,5 @@
-import Card from "./Card";
-import {FaceValue, Suite} from "./CardEnums";
+import Card from "../Card";
+import {FaceValue, Suite} from "../CardEnums";
 import HoldemHandDecider from "./HoldemHandDecider";
 import {Type} from "./HandEnums";
 

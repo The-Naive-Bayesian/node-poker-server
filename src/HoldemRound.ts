@@ -1,8 +1,9 @@
 import HandPlayer from "./HandPlayer";
 import Deck from "./Deck";
 import Card from "./Card";
-import HoldemHandDecider from "./HoldemHandDecider";
-import Hand from "./Hand";
+import HoldemHandDecider from "./hands/HoldemHandDecider";
+import HighCardHand from "./hands/HighCardHand";
+import Hand from "./hands/Hand";
 
 export default class HoldemRound {
   private readonly boardCards: Card[];
