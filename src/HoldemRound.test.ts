@@ -11,7 +11,7 @@ describe('HoldemRound', () => {
         new HandPlayer(100, 'Player 3', false, false),
       ];
       const deck = new Deck();
-      const round = new HoldemRound(players, deck);
+      const round = new HoldemRound(players, deck, 2, 1);
 
       round.play();
     });

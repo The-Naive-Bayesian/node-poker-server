@@ -2,12 +2,15 @@ import HandPlayer from "./HandPlayer";
 import Deck from "./Deck";
 import Card from "./Card";
 import HoldemHandDecider from "./HoldemHandDecider";
+import Hand from "./Hand";
 
 export default class HoldemRound {
   private readonly boardCards: Card[];
+  pot: Pot;
 
-  constructor(public readonly players: HandPlayer[], private deck: Deck) {
+  constructor(public readonly players: HandPlayer[], private deck: Deck, private bigBlind: number, private smallBlind: number) {
     this.boardCards = [];
+    this.pot = new Pot();
   }
 
   play(): void {
@@ -24,6 +27,8 @@ export default class HoldemRound {
     for (let i=0; i<this.players.length; i++) {
       this.handlePlayerPreFlop(this.players[i]);
     }
+
+    this.pot.settleBets();
   }
 
   private handleBlinds(): void {
@@ -47,10 +52,22 @@ export default class HoldemRound {
 
   private handlePlayerBigBlind(player: HandPlayer): void {
     console.log(`${player.name} has the big blind`);
+    this.takePlayerBet(player, this.bigBlind);
   }
 
   private handlePlayerSmallBlind(player: HandPlayer): void {
     console.log(`${player.name} has the small blind`);
+    this.takePlayerBet(player, this.smallBlind);
+  }
+
+  // TODO: remember player bets until next stage (e.g. flop --> turn, turn --> river, etc)
+  private takePlayerBet(player: HandPlayer, amount: number): void {
+    const bet = player.bet(amount);
+    this.pot.contributeToPot(player.name, bet);
+
+    // Logging for dev work
+    // TODO: remove
+    console.log(`Pot is now ${this.pot.getPot()}`);
   }
 
   private assignPlayerHoleCards(player: HandPlayer): void {
@@ -58,23 +75,20 @@ export default class HoldemRound {
     player.setHoleCards(holeCards);
   }
 
-  private handlePlayerPreFlop(player: HandPlayer): void {
-    // Logging for dev work
-    // TODO: remove
-    const [card1, card2] = player.getHoleCards();
-    console.log(`Player ${player.name} drew ${card1} and ${card2}`);
-  }
+  private handlePlayerPreFlop(player: HandPlayer): void {}
 
   flop(): void {
     this.drawBoardCards(3);
 
     // Logging for dev work
     // TODO: remove
-    console.log(`Flop was ${this.boardCards[0]}, ${this.boardCards[1]}, ${this.boardCards[2]}`);
+    console.log(`Flop was ${this.boardCards[0].toShortString()}, ${this.boardCards[1].toShortString()}, ${this.boardCards[2].toShortString()}`);
 
     for (let i=0; i<this.players.length; i++) {
       this.handlePlayerFlop(this.players[i]);
     }
+
+    this.pot.settleBets();
   }
 
   private handlePlayerFlop(player: HandPlayer): void {}
@@ -89,11 +103,13 @@ export default class HoldemRound {
 
     // Logging for dev work
     // TODO: remove
-    console.log(`Turn was ${this.boardCards[3]}`);
+    console.log(`Turn was ${this.boardCards[3].toShortString()}`);
 
     for (let i=0; i<this.players.length; i++) {
       this.handlePlayerTurn(this.players[i]);
     }
+
+    this.pot.settleBets();
   }
 
   private handlePlayerTurn(player: HandPlayer): void {}
@@ -103,12 +119,13 @@ export default class HoldemRound {
 
     // Logging for dev work
     // TODO: remove
-    console.log(`River was ${this.boardCards[4]}`);
+    console.log(`River was ${this.boardCards[4].toShortString()}`);
 
     for (let i=0; i<this.players.length; i++) {
       this.handlePlayerRiver(this.players[i]);
     }
 
+    this.pot.settleBets();
     this.handleShowdown(this.players);
   }
 
@@ -128,15 +145,25 @@ export default class HoldemRound {
       i++;
     }
 
+    this.distributeWinnings(winners, playerHands);
+  }
+
+  private distributeWinnings(winners: HandPlayer[], playerHands: Hand[]): void {
+    let chipsToDistribute = this.pot;
+
     // Logging for dev work
     // TODO: remove
     if (winners.length == 1) {
-      console.log(`Player ${winners[0].name} won with: ${playerHands[0].cards.join(', ')}`);
+      console.log(`Player ${winners[0].name} won with: ${playerHands[0]}`);
+      winners[0].receiveChips(this.pot.getPot());
     } else {
       console.log(`${winners.length} players tied:`);
-      winners.forEach(
-        (winner, index) => console.log(`${winner.name} with ${playerHands[index].cards.join(', ')}`)
-      );
+
+      const distributions = this.pot.distributePot(winners.length);
+      winners.forEach((winner, i) => {
+        console.log(`${winner.name} with ${playerHands[i]}`);
+        winner.receiveChips(distributions[i]);
+      });
     }
   }
 
@@ -153,5 +180,48 @@ export default class HoldemRound {
     };
 
     players.sort(sortFunction);
+  }
+}
+
+class Pot {
+  private pot: number;
+  private liveBets: {[playerId: string]: number};
+
+  constructor() {
+    this.pot = 0;
+    this.liveBets = {};
+  }
+
+  contributeToPot(playerId: string, amount: number): void {
+    if (!this.liveBets[playerId]) {
+      this.liveBets[playerId] = 0;
+    }
+    this.liveBets[playerId] += amount;
+    this.pot += amount;
+  }
+
+  settleBets(): void {
+    this.liveBets = {};
+  }
+
+  distributePot(winnerCount: number): number[] {
+    const distributions = [];
+
+    // TODO: distribute pot more fairly
+    let chipsToDistribute = this.pot;
+    const potFraction = Math.floor(chipsToDistribute / winnerCount);
+
+    for (let i=0; i<winnerCount - 1; i++) {
+      distributions.push(potFraction);
+      chipsToDistribute -= potFraction;
+    }
+
+    distributions.push(chipsToDistribute);
+
+    return distributions;
+  }
+
+  getPot(): number {
+    return this.pot;
   }
 }

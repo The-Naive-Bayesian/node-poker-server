@@ -16,9 +16,8 @@ export default class Hand {
     }
 
     // Sort in descending order of value
-    const sortFn = (card1, card2) => card2.compareTo(card1);
-    this.cards.sort(sortFn);
-    other.cards.sort(sortFn);
+    this.sort();
+    other.sort();
 
     for (let i = 0; i < this.size; i++) {
       const result = this.cards[i].compareTo(other.cards[i]);
@@ -28,5 +27,17 @@ export default class Hand {
 
     // If all cards of equal value, it's a tie
     return 0;
+  }
+
+  toString(): string {
+    this.sort();
+    return this.cards
+      .map(card => card.toShortString())
+      .join(', ');
+  }
+
+  sort(): void {
+    const sortFn = (card1, card2) => card2.compareTo(card1);
+    this.cards.sort(sortFn);
   }
 }
